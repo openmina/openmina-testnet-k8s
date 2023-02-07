@@ -8,7 +8,6 @@ SEED_NODE_CHART=mina/helm/seed-node
 BLOCK_PRODUCER_CHART=mina/helm/block-producer
 SNARK_WORKER_CHART=mina/helm/snark-worker
 PLAIN_NODE_CHART=mina/helm/plain-node
-FRONTEND_CHART=mina/helm/openmina-frontend
 
 TEMP=$(getopt -o 'afspwdoPn:' --long 'all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port,namespace:' -n 'example.bash' -- "$@")
 
@@ -27,6 +26,7 @@ while true; do
             DEPLOY_PRODUCERS=1
             DEPLOY_SNARK_WORKERS=1
             DEPLOY_NODES=1
+            DEPLOY_FRONTEND=1
             shift
             continue
         ;;
@@ -100,10 +100,6 @@ fi
 
 HELM_ARGS="--namespace=$NAMESPACE --values=values.yaml --set=frontend.nodePort=$NODE_PORT --set-file=mina.runtimeConfig=resources/daemon.json $HELM_ARGS"
 
-if [ -n "$DEPLOY_FRONTEND" ]; then
-    helm upgrade --install frontend $FRONTEND_CHART $HELM_ARGS
-fi
-
 if [ -n "$DEPLOY_SEEDS" ]; then
     helm upgrade --install seeds $SEED_NODE_CHART $HELM_ARGS
 fi
@@ -113,9 +109,13 @@ if [ -n "$DEPLOY_PRODUCERS" ]; then
 fi
 
 if [ -n "$DEPLOY_SNARK_WORKERS" ]; then
-    helm upgrade --install snark-workers $SNARK_WORKER_CHART $HELM_ARGS
+    helm upgrade --install snark-workers $SNARK_WORKER_CHART $HELM_ARGS --set-file=publicKey=resources/key-99.pub
 fi
 
 if [ -n "$DEPLOY_NODES" ]; then
     helm upgrade --install nodes $PLAIN_NODE_CHART $HELM_ARGS
+fi
+
+if [ -n "$DEPLOY_FRONTEND" ]; then
+    "$(dirname "$0")/update-frontend.sh" --namespace=$NAMESPACE --node-port=$NODE_PORT
 fi

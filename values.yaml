@@ -1,6 +1,6 @@
 testnetName: testnet
 mina:
-  image: minaprotocol/mina-daemon:9faad06-focal-berkeley
+  image: tizoc/mina-daemon:tracing-optional-optimizations-launcher-focal-berkeley
   privkeyPass:
   exposeGraphql: true
   seedPeers:
@@ -11,8 +11,8 @@ mina:
 
 
 frontend:
-  image: directcuteo/mina-frontend:resources2
-  nodePort: 31315
+  image: directcuteo/mina-frontend:resources11
+  nodePort: 31308
   nodes: [ "seed1", "prod1", "prod2", "node1", "node2", "node3", "node4", "snark-coordinator" ]
 
 healthcheck:
@@ -24,6 +24,10 @@ healthcheck:
 plainNodesConfig:
   count: 8
   namePrefix: node
+
+snarkWorkersConfig:
+  count: 8
+  namePrefix: snark-worker
 
 seedConfigs:
   - name: seed1
