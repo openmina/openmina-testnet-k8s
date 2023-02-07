@@ -4,7 +4,7 @@ set -e
 
 FRONTEND_CHART=mina/helm/openmina-frontend
 
-TEMP=$(getopt -o 'n:i:p:' --long 'namespace:,image:,port:,node-port' -n "$0" -- "$@")
+TEMP=$(getopt -o 'n:i:p:' --long 'namespace:,image:,port:,node-port:' -n "$0" -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
@@ -50,15 +50,30 @@ fi
 KUBECTL="kubectl --namespace $NAMESPACE"
 
 gen_values_yaml() {
-    CMD="$KUBECTL get pods --selector=testnet=testnet --output=name"
     cat <<EOF
 frontend:
   image: $IMAGE
   nodePort: $NODE_PORT
   nodes:
 EOF
-    for POD in $($CMD); do
-        NAME=$($KUBECTL get "$POD" --output="jsonpath={.metadata.labels.app}")
+    for DEPLOYMENT in $($KUBECTL get deployments --output=name); do
+        NAME=$($KUBECTL get "$DEPLOYMENT" --output=jsonpath='{.metadata.name}')
+        CONTAINERS=$($KUBECTL get "$DEPLOYMENT" --output='jsonpath={.spec.template.spec.containers[*].name}')
+        MINA=""
+        for CONTAINER in $CONTAINERS; do
+            case $CONTAINER in
+                'mina')
+                    MINA=1
+                    continue
+                ;;
+                *)
+                    continue
+                ;;
+            esac
+        done
+        if [ -z "$MINA" ]; then
+            continue
+        fi
         cat <<EOF
   - $NAME
 EOF
@@ -83,6 +98,8 @@ fi
 
 VALUES=$(mktemp --tmpdir frontend-values.XXXXXX.yaml)
 gen_values_yaml > "$VALUES"
+echo "Frontend configuration:"
+cat "$VALUES"
 helm upgrade --install frontend "$FRONTEND_CHART" --values="$VALUES"
 kubectl scale deployment frontend --replicas=0
 kubectl scale deployment frontend --replicas=1
