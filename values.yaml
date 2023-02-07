@@ -12,8 +12,6 @@ mina:
 
 frontend:
   image: directcuteo/mina-frontend:resources11
-  nodePort: 31308
-  nodes: [ "seed1", "prod1", "prod2", "node1", "node2", "node3", "node4", "snark-coordinator" ]
 
 healthcheck:
   enabled: false
