@@ -20,10 +20,12 @@ healthcheck:
   initialDelaySeconds: 60
 
 plainNodesConfig:
+  # the number of plain nodes
   count: 8
   namePrefix: node
 
 snarkWorkersConfig:
+  # the number of snark workers
   count: 8
   namePrefix: snark-worker
 
