@@ -8,8 +8,9 @@ SEED_NODE_CHART=mina/helm/seed-node
 BLOCK_PRODUCER_CHART=mina/helm/block-producer
 SNARK_WORKER_CHART=mina/helm/snark-worker
 PLAIN_NODE_CHART=mina/helm/plain-node
+FRONTEND_CHART=mina/helm/openmina-frontend
 
-TEMP=$(getopt -o 'aspwdon:' --long 'all,seeds,producers,snark-workers,nodes,plain-nodes,optimized,namespace:' -n 'example.bash' -- "$@")
+TEMP=$(getopt -o 'afspwdoPn:' --long 'all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port,namespace:' -n 'example.bash' -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
@@ -26,6 +27,11 @@ while true; do
             DEPLOY_PRODUCERS=1
             DEPLOY_SNARK_WORKERS=1
             DEPLOY_NODES=1
+            shift
+            continue
+        ;;
+        '-f'|'--frontend')
+            DEPLOY_FRONTEND=1
             shift
             continue
         ;;
@@ -60,6 +66,19 @@ while true; do
             shift 2
             continue
         ;;
+        '-P'|'--port'|'--node-port')
+            NODE_PORT=$2
+            shift 2
+            continue
+        ;;
+		'--')
+			shift
+			break
+		;;
+		*)
+			echo 'Internal error!' >&2
+			exit 1
+		;;
     esac
 done
 
@@ -71,7 +90,19 @@ if [ -z "$NAMESPACE" ]; then
     fi
 fi
 
-HELM_ARGS="--namespace=$NAMESPACE --values=values.yaml --set-file=mina.runtimeConfig=resources/daemon.json $HELM_ARGS"
+if [ -z "$NODE_PORT" ]; then
+    if [ -z "$OPTIMIZED" ]; then
+        NODE_PORT=31308
+    else
+        NODE_PORT=31310
+    fi
+fi
+
+HELM_ARGS="--namespace=$NAMESPACE --values=values.yaml --set=frontend.nodePort=$NODE_PORT --set-file=mina.runtimeConfig=resources/daemon.json $HELM_ARGS"
+
+if [ -n "$DEPLOY_FRONTEND" ]; then
+    helm upgrade --install frontend $FRONTEND_CHART $HELM_ARGS
+fi
 
 if [ -n "$DEPLOY_SEEDS" ]; then
     helm upgrade --install seeds $SEED_NODE_CHART $HELM_ARGS
