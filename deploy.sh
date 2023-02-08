@@ -98,22 +98,26 @@ if [ -z "$NODE_PORT" ]; then
     fi
 fi
 
-HELM_ARGS="--namespace=$NAMESPACE --values=values.yaml --set=frontend.nodePort=$NODE_PORT --set-file=mina.runtimeConfig=resources/daemon.json $HELM_ARGS"
+values() {
+    echo "$(dirname "$0")/values/$1.yaml"
+}
+
+HELM_ARGS="--namespace=$NAMESPACE --values=$(values common) --set=frontend.nodePort=$NODE_PORT --set-file=mina.runtimeConfig=resources/daemon.json $HELM_ARGS"
 
 if [ -n "$DEPLOY_SEEDS" ]; then
-    helm upgrade --install seeds $SEED_NODE_CHART $HELM_ARGS
+    helm upgrade --install seeds $SEED_NODE_CHART $HELM_ARGS --values="$(values seed)"
 fi
 
 if [ -n "$DEPLOY_PRODUCERS" ]; then
-    helm upgrade --install producers $BLOCK_PRODUCER_CHART $HELM_ARGS
+    helm upgrade --install producers $BLOCK_PRODUCER_CHART $HELM_ARGS --values="$(values producer)"
 fi
 
 if [ -n "$DEPLOY_SNARK_WORKERS" ]; then
-    helm upgrade --install snark-workers $SNARK_WORKER_CHART $HELM_ARGS --set-file=publicKey=resources/key-99.pub
+    helm upgrade --install snark-workers $SNARK_WORKER_CHART $HELM_ARGS  --values="$(values snark-worker)" --set-file=publicKey=resources/key-99.pub
 fi
 
 if [ -n "$DEPLOY_NODES" ]; then
-    helm upgrade --install nodes $PLAIN_NODE_CHART $HELM_ARGS
+    helm upgrade --install nodes $PLAIN_NODE_CHART $HELM_ARGS --values="$(values node)"
 fi
 
 if [ -n "$DEPLOY_FRONTEND" ]; then

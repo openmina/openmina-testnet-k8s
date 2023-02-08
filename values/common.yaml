@@ -8,6 +8,7 @@ mina:
     - /dns4/seed1/tcp/10909/p2p/12D3KooWBT8pyJAfWJhdeGYAtKvcaUmm78ExyZ6uo6BEimYNVat1
   # memRequest: 4Gi
   # cpuRequest: 4
+  # optimized: false
 
 
 frontend:
@@ -21,13 +22,13 @@ healthcheck:
 
 plainNodesConfig:
   # the number of plain nodes
-  count: 8
+  count: 16
   namePrefix: node
 
 snarkWorkersConfig:
   # the number of snark workers
-  count: 8
-  namePrefix: snark-worker
+  count: 64
+  namePrefix: snarker
 
 seedConfigs:
   - name: seed1
