@@ -1,2 +1,2 @@
 frontend:
-  image: directcuteo/mina-frontend:vanilla1
+  image: directcuteo/mina-frontend:vanilla3
