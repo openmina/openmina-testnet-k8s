@@ -9,10 +9,8 @@ mina:
   # memRequest: 4Gi
   # cpuRequest: 4
   # optimized: false
-
-
-frontend:
-  image: directcuteo/mina-frontend:resources11
+  useCustomEntrypoint: true
+  customEntrypoint: /scripts/unset-k8s-env.sh
 
 healthcheck:
   enabled: false
@@ -22,12 +20,12 @@ healthcheck:
 
 plainNodesConfig:
   # the number of plain nodes
-  count: 16
+  count: 8
   namePrefix: node
 
 snarkWorkersConfig:
   # the number of snark workers
-  count: 64
+  count: 60
   namePrefix: snarker
 
 seedConfigs:
@@ -63,9 +61,9 @@ resources:
   args: ["--executable-name=mina"]
 
 bpfDebugger:
-  enable: false
+  enable: true
   image: akoptelov/mina-network-debugger:bef771e
-  chainId:
+  chainId: ee416dfef30fea1935d25e2ada89f3f34ba4893bc52ee29d2d11e893cb721dc8
 
 nodeSelector:
   preemptible: false
