@@ -47,12 +47,13 @@ if [ -z "$NAMESPACE" ]; then
     exit 1
 fi
 
-KUBECTL="kubectl --namespace $NAMESPACE"
+KUBECTL="kubectl --namespace=$NAMESPACE"
+HELM="helm --namespace=$NAMESPACE"
 
 gen_values_yaml() {
     cat <<EOF
 frontend:
-  image: $IMAGE
+  ${IMAGE:+image: $IMAGE}
   nodePort: $NODE_PORT
   nodes:
 EOF
@@ -64,6 +65,7 @@ EOF
             case $CONTAINER in
                 'mina')
                     MINA=1
+                    echo "Detected deployment $NAME with Mina node" >&2
                     continue
                 ;;
                 *)
@@ -88,19 +90,20 @@ if [ -z "$NODE_PORT" ]; then
     fi
 fi
 
-if [ -z "$IMAGE" ]; then
-    IMAGE=$($KUBECTL get deployment/frontend --output=jsonpath='{.spec.template.spec.containers[0].image}')
-    if [ -z "$NODE_PORT" ]; then
-        echo "Cannot determine frontend image. Use '--image'."
-        exit 1
-    fi
-fi
+# if [ -z "$IMAGE" ]; then
+#     IMAGE=$($KUBECTL get deployment/frontend --output=jsonpath='{.spec.template.spec.containers[0].image}')
+#     if [ -z "$NODE_PORT" ]; then
+#         echo "Cannot determine frontend image. Use '--image'."
+#         exit 1
+#     fi
+# fi
 
+COMMON_VALUES="$(dirname "$0")/values/frontend.yaml"
 VALUES=$(mktemp --tmpdir frontend-values.XXXXXX.yaml)
-gen_values_yaml > "$VALUES"
+{ gen_values_yaml > "$VALUES"; } 2>&1
 echo "Frontend configuration:"
 cat "$VALUES"
-helm upgrade --install frontend "$FRONTEND_CHART" --values="$VALUES"
-kubectl scale deployment frontend --replicas=0
-kubectl scale deployment frontend --replicas=1
+$HELM upgrade --install frontend "$FRONTEND_CHART" --values="$COMMON_VALUES" --values="$VALUES"
+$KUBECTL scale deployment frontend --replicas=0
+$KUBECTL scale deployment frontend --replicas=1
 rm "$VALUES"
