@@ -1,2 +1,2 @@
 frontend:
-  image: directcuteo/mina-frontend:resources15
+  image: directcuteo/mina-frontend:vanilla1
