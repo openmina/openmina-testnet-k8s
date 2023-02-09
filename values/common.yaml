@@ -25,7 +25,7 @@ plainNodesConfig:
 
 snarkWorkersConfig:
   # the number of snark workers
-  count: 64
+  count: 8
   namePrefix: snarker
 
 seedConfigs:
@@ -66,7 +66,7 @@ bpfDebugger:
   enable: true
   image: akoptelov/mina-network-debugger:afb3938
   chainId: ee416dfef30fea1935d25e2ada89f3f34ba4893bc52ee29d2d11e893cb721dc8
-  cpu: "2000m"
+  cpu: "1500m"
   memory: "4Gi"
 
 nodeSelector:

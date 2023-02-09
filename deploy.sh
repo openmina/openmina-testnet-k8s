@@ -96,7 +96,7 @@ if [ -z "$NAMESPACE" ]; then
     if [ -z "$OPTIMIZED" ]; then
         NAMESPACE=testnet
     else
-        NAMESPACE=testnet-optimized
+        NAMESPACE=testnet
     fi
 fi
 
