@@ -50,36 +50,43 @@ fi
 KUBECTL="kubectl --namespace=$NAMESPACE"
 HELM="helm --namespace=$NAMESPACE"
 
+get_values_file() {
+    SHA=$(echo "$*" | sha256sum -)
+    echo "frontend-values-${SHA%% *}.yaml"
+}
+
+get_mina_deployments() {
+    $KUBECTL get deployments -o json | \
+        jq -r '.items[] | select( .spec.template.spec.containers | any( .name == "mina") ) | .metadata.name'
+}
+
 gen_values_yaml() {
+    IMAGE=$1
+    NODE_PORT=$2
+    shift 2;
     cat <<EOF
 frontend:
   ${IMAGE:+image: $IMAGE}
   nodePort: $NODE_PORT
   nodes:
 EOF
-    for DEPLOYMENT in $($KUBECTL get deployments --output=name); do
-        NAME=$($KUBECTL get "$DEPLOYMENT" --output=jsonpath='{.metadata.name}')
-        CONTAINERS=$($KUBECTL get "$DEPLOYMENT" --output='jsonpath={.spec.template.spec.containers[*].name}')
-        MINA=""
-        for CONTAINER in $CONTAINERS; do
-            case $CONTAINER in
-                'mina')
-                    MINA=1
-                    echo "Detected deployment $NAME with Mina node" >&2
-                    continue
-                ;;
-                *)
-                    continue
-                ;;
-            esac
-        done
-        if [ -z "$MINA" ]; then
-            continue
-        fi
+    for NAME in "$@"; do
         cat <<EOF
   - $NAME
 EOF
     done
+}
+
+values() {
+    PODS=$(get_mina_deployments)
+    VALUES=$(get_values_file "$IMAGE" "$NODE_PORT" $PODS)
+    if ! [ -f "$VALUES" ]; then
+        echo "Generating new $VALUES" >&2
+        gen_values_yaml "$IMAGE" "$NODE_PORT" $PODS > "$VALUES"
+    else
+        echo "Using existing $VALUES" >&2
+    fi
+    echo "$VALUES"
 }
 
 if [ -z "$NODE_PORT" ]; then
@@ -99,11 +106,7 @@ fi
 # fi
 
 COMMON_VALUES="$(dirname "$0")/values/frontend.yaml"
-VALUES=$(mktemp --tmpdir frontend-values.XXXXXX.yaml)
-{ gen_values_yaml > "$VALUES"; } 2>&1
-echo "Frontend configuration:"
-cat "$VALUES"
+VALUES=$(values)
 $HELM upgrade --install frontend "$FRONTEND_CHART" --values="$COMMON_VALUES" --values="$VALUES"
 $KUBECTL scale deployment frontend --replicas=0
 $KUBECTL scale deployment frontend --replicas=1
-rm "$VALUES"
