@@ -92,9 +92,12 @@ while true; do
     esac
 done
 
-if [ -z "$NAMESPACE" ]; then
+if [ "$NAMESPACE" = testnet ]; then
+    echo "'testnet' namespace shouldn't be used"
+    exit 1
+elif [ -z "$NAMESPACE" ]; then
     if [ -z "$OPTIMIZED" ]; then
-        NAMESPACE=testnet
+        NAMESPACE=testnet-unoptimized
     else
         NAMESPACE=testnet-optimized
     fi
@@ -111,7 +114,7 @@ fi
 
 if [ -z "$NODE_PORT" ]; then
     if [ -z "$OPTIMIZED" ]; then
-        NODE_PORT=31308
+        NODE_PORT=31311
     else
         NODE_PORT=31310
     fi
