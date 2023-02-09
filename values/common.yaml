@@ -25,7 +25,7 @@ plainNodesConfig:
 
 snarkWorkersConfig:
   # the number of snark workers
-  count: 60
+  count: 64
   namePrefix: snarker
 
 seedConfigs:
@@ -59,6 +59,8 @@ resources:
   enable: true
   image: adrnagy/mina-node-monitoring:17c9127
   args: ["--executable-name=mina"]
+  cpu: "100m"
+  memory: "100Mi"
 
 bpfDebugger:
   enable: true
