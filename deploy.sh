@@ -9,7 +9,7 @@ BLOCK_PRODUCER_CHART=mina/helm/block-producer
 SNARK_WORKER_CHART=mina/helm/snark-worker
 PLAIN_NODE_CHART=mina/helm/plain-node
 
-TEMP=$(getopt -o 'afspwdoPn:' --long 'all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port,namespace:,dry-run' -n 'example.bash' -- "$@")
+TEMP=$(getopt -o 'DafspwdoPn:' --long 'delete,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port,namespace:,dry-run' -n 'example.bash' -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
@@ -21,37 +21,42 @@ unset TEMP
 
 while true; do
     case "$1" in
+        '-D'|'--delete')
+            DELETE=1
+            shift
+            continue
+        ;;
         '-a'|'--all')
-            DEPLOY_SEEDS=1
-            DEPLOY_PRODUCERS=1
-            DEPLOY_SNARK_WORKERS=1
-            DEPLOY_NODES=1
-            DEPLOY_FRONTEND=1
+            SEEDS=1
+            PRODUCERS=1
+            SNARK_WORKERS=1
+            NODES=1
+            FRONTEND=1
             shift
             continue
         ;;
         '-f'|'--frontend')
-            DEPLOY_FRONTEND=1
+            FRONTEND=1
             shift
             continue
         ;;
         '-s'|'--seeds'|'--seed-nodes')
-            DEPLOY_SEEDS=1
+            SEEDS=1
             shift
             continue
         ;;
         '-p'|'--producers'|'--block-producers'|'--producer-nodes')
-            DEPLOY_PRODUCERS=1
+            PRODUCERS=1
             shift
             continue
         ;;
         '-w'|'--snark-workers')
-            DEPLOY_SNARK_WORKERS=1
+            SNARK_WORKERS=1
             shift
             continue
         ;;
         '-d'|'--nodes'|'--plain-nodes')
-            DEPLOY_NODES=1
+            NODES=1
             shift
             continue
         ;;
@@ -95,6 +100,15 @@ if [ -z "$NAMESPACE" ]; then
     fi
 fi
 
+if [ -n "$DELETE" ]; then
+    if [ -n "$SEEDS" ] || [ -n "$PRODUCERS" ] || [ -n "$SNARK_WORKERS" ] || [ -n "$NODES" ] || [ -n "$FRONTEND" ]; then
+        echo "--delete shouldn't be used with --seed, etc";
+        exit 1
+    fi
+    helm --namespace=$NAMESPACE delete seeds producers snark-workers nodes
+    exit
+fi
+
 if [ -z "$NODE_PORT" ]; then
     if [ -z "$OPTIMIZED" ]; then
         NODE_PORT=31308
@@ -113,22 +127,22 @@ HELM_ARGS="--namespace=$NAMESPACE \
            --set-file=mina.runtimeConfig=resources/daemon.json \
            $HELM_ARGS"
 
-if [ -n "$DEPLOY_SEEDS" ]; then
+if [ -n "$SEEDS" ]; then
     helm upgrade --install seeds $SEED_NODE_CHART $HELM_ARGS --values="$(values seed)"
 fi
 
-if [ -n "$DEPLOY_PRODUCERS" ]; then
+if [ -n "$PRODUCERS" ]; then
     helm upgrade --install producers $BLOCK_PRODUCER_CHART $HELM_ARGS --values="$(values producer)"
 fi
 
-if [ -n "$DEPLOY_SNARK_WORKERS" ]; then
+if [ -n "$SNARK_WORKERS" ]; then
     helm upgrade --install snark-workers $SNARK_WORKER_CHART $HELM_ARGS  --values="$(values snark-worker)" --set-file=publicKey=resources/key-99.pub
 fi
 
-if [ -n "$DEPLOY_NODES" ]; then
+if [ -n "$NODES" ]; then
     helm upgrade --install nodes $PLAIN_NODE_CHART $HELM_ARGS --values="$(values node)"
 fi
 
-if [ -n "$DEPLOY_FRONTEND" ]; then
+if [ -n "$FRONTEND" ]; then
     "$(dirname "$0")/update-frontend.sh" --namespace=$NAMESPACE --node-port=$NODE_PORT
 fi
