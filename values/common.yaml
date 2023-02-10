@@ -72,7 +72,7 @@ bpfDebugger:
   restartMinaOnExit: true
 
 logs:
-  enable: true
+  enable: false
 
 nodeSelector:
   preemptible: false
