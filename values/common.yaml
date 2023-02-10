@@ -69,5 +69,8 @@ bpfDebugger:
   cpu: "2000m"
   memory: "4Gi"
 
+logs:
+  enable: true
+
 nodeSelector:
   preemptible: false
