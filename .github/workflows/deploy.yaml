@@ -1,0 +1,49 @@
+name: Deploy Openmina Testnet
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: Mina image kind
+        type: choice
+        options:
+          - Optimized
+          - Unoptimized
+      namespace:
+        description: Alternative namespace to use
+        type: String
+        required: false
+      port:
+        description: Cluster node port to use
+        type: string
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Chekcout
+      uses: actions/checkout@v3
+
+    - name: Configure Kubernetes
+      env:
+        KUBECONFIG_CONTENT: ${{secrets.KUBECONFIG}}
+      run: |
+        umask 0077
+        mkdir -p $HOME/.kube
+        echo "$KUBECONFIG_CONTENT" > $HOME/.kube/config
+
+    - name: Deploy
+      env:
+        KIND: ${{inputs.kind}}
+        NAMESPACE: ${{inputs.namespace}}
+        NODE_PORT: ${{inputs.port}}
+      run: |
+        CMD="./deploy.sh"
+        if [ "$KIND" == "Optimized" ]; then CMD="$CMD --optimized"; fi
+        if [ -n "$NAMESPACE" ] && [ -n "$NODE_PORT" ]; then
+            CMD="$CMD --namespace=$NAMESPACE --node-port=$NODE_PORT"
+        elif [ -n "$NAMESPACE" ] || [ -n "$NODE_PORT" ]; then
+            echo "Both namespace and node port should be specified"
+            exit 1
+        fi
+        echo $CMD
