@@ -38,7 +38,7 @@ jobs:
         NAMESPACE: ${{inputs.namespace}}
         NODE_PORT: ${{inputs.port}}
       run: |
-        CMD="./deploy.sh"
+        CMD="./deploy.sh --seeds"
         if [ "$KIND" == "Optimized" ]; then CMD="$CMD --optimized"; fi
         if [ -n "$NAMESPACE" ] && [ -n "$NODE_PORT" ]; then
             CMD="$CMD --namespace=$NAMESPACE --node-port=$NODE_PORT"
@@ -46,4 +46,4 @@ jobs:
             echo "Both namespace and node port should be specified"
             exit 1
         fi
-        echo $CMD
+        $CMD
