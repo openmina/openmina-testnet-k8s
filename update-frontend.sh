@@ -4,7 +4,24 @@ set -e
 
 FRONTEND_CHART=mina/helm/openmina-frontend
 
-TEMP=$(getopt -o 'n:i:p:' --long 'namespace:,image:,port:,node-port:' -n "$0" -- "$@")
+usage() {
+    cat <<EOF
+Updates Openmina frontend according to nodes deployments.
+
+Usage: $0 --namespace=NAMESPACE
+
+Options:
+   -h, --help       Display this message
+   -n, --namespace=NAMESPACE
+                    Use namespace NAMESPACE
+   -p, --node-port=PORT
+                    Use PORT as a node port to access the deployed frontend
+   -i, --image=IMAGE
+                    Specify frontend image to use
+EOF
+}
+
+TEMP=$(getopt -o 'hn:i:p:' --long 'help,namespace:,image:,port:,node-port:' -n "$0" -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
@@ -14,8 +31,13 @@ fi
 eval set -- "$TEMP"
 unset TEMP
 
+
 while true; do
     case "$1" in
+        '-h'|'--help')
+            usage
+            exit 0
+        ;;
         '-n'|'--namespace')
             NAMESPACE=$2
             shift 2

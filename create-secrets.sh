@@ -2,7 +2,24 @@
 
 set -e
 
-TEMP=$(getopt -o 'n:' --long 'namespace:' -n 'example.bash' -- "$@")
+usage() {
+    cat <<EOF
+Creates public/private key secrets from specified files.
+
+Usage: $0 --namespace=NAMESPACE NAME=PRIVKEY-FILE ...
+
+Where NAME is the name of the Secret resource, and the PRIVKEY-FILE is the path
+to the private key (either libp2p or Mina privkey). Secret will have property
+"key" specifying the private key, and "pub", containint public key.
+
+Options:
+   -h, --help       Display this message
+   -n, --namespace=NAMESPACE
+                    Use namespace NAMESPACE
+EOF
+}
+
+TEMP=$(getopt -o 'hn:' --long 'help,namespace:' -n "$0" -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
@@ -14,6 +31,10 @@ unset TEMP
 
 while true; do
     case "$1" in
+        '-h'|'--help')
+            usage
+            exit 0
+        ;;
         '-n'|'--namespace')
             NAMESPACE=$2
             shift 2

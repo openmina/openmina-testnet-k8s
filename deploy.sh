@@ -9,7 +9,7 @@ BLOCK_PRODUCER_CHART=mina/helm/block-producer
 SNARK_WORKER_CHART=mina/helm/snark-worker
 PLAIN_NODE_CHART=mina/helm/plain-node
 
-TEMP=$(getopt -o 'DafspwdoPn:' --long 'delete,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port,namespace:,dry-run' -n 'example.bash' -- "$@")
+TEMP=$(getopt -o 'hDafspwdoPn:' --long 'help,delete,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,dry-run' -n "$0" -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
@@ -19,8 +19,35 @@ fi
 eval set -- "$TEMP"
 unset TEMP
 
+usage() {
+    cat <<EOF
+Deploys/updates Openmina testnet.
+
+Usage: $0 [OPTIONS]
+
+Options:
+   -h, --help       Display this message
+   -o, --optimized  Enable optimizations for Mina daemon
+   -a, --all        Install all nodes and the frontend
+   -s, --seeds      Install seed nodes
+   -p, --producers  Install block producing nodes
+   -w, --snark-workers
+                    Install snark workers (and HTTP coordinator)
+   -d, --nodes      Install plain nodes
+   -n, --namespace=NAMESPACE
+                    Use namespace NAMESPACE
+   -P, --node-port=PORT
+                    Use PORT as a node port to access the deployed frontend
+   -D, --delete     Deletes all node-related Helm releases
+EOF
+}
+
 while true; do
     case "$1" in
+        '-h'|'--help')
+            usage
+            exit 0
+        ;;
         '-D'|'--delete')
             DELETE=1
             shift
