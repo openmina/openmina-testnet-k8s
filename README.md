@@ -60,6 +60,15 @@ Also, before the first deployment, the namespace should be configured by adding
 needed `ConfigMap` and `Secret` resources (see #namespace-configuration).
 
 
+## Linting
+
+Before deploying an updated Helm chart, it is good to have it linted. This can
+be done using this command:
+
+``` sh
+$ ./deploy.sh --lint --all
+```
+
 ## Namespace configuration
 
 Before the testnet can be installed into an empty namespace, it should be

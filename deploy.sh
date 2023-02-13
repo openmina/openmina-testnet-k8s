@@ -9,7 +9,7 @@ BLOCK_PRODUCER_CHART=mina/helm/block-producer
 SNARK_WORKER_CHART=mina/helm/snark-worker
 PLAIN_NODE_CHART=mina/helm/plain-node
 
-TEMP=$(getopt -o 'hDafspwdoPn:' --long 'help,delete,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,dry-run' -n "$0" -- "$@")
+TEMP=$(getopt -o 'hDafspwdoPnl:' --long 'help,delete,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,dry-run,lint' -n "$0" -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
@@ -108,6 +108,11 @@ while true; do
             shift
             continue
         ;;
+        '--lint')
+            LINT=1
+            shift
+            continue
+        ;;
 		'--')
 			shift
 			break
@@ -158,21 +163,41 @@ HELM_ARGS="--namespace=$NAMESPACE \
            $HELM_ARGS"
 
 if [ -n "$SEEDS" ]; then
-    helm upgrade --install seeds $SEED_NODE_CHART $HELM_ARGS --values="$(values seed)"
+    if [ -n "$LINT" ]; then
+        helm lint $SEED_NODE_CHART $HELM_ARGS --values="$(values seed)"
+    else
+        helm upgrade --install seeds $SEED_NODE_CHART $HELM_ARGS --values="$(values seed)"
+    fi
 fi
 
 if [ -n "$PRODUCERS" ]; then
-    helm upgrade --install producers $BLOCK_PRODUCER_CHART $HELM_ARGS --values="$(values producer)"
+    if [ -n "$LINT" ]; then
+        helm lint $BLOCK_PRODUCER_CHART $HELM_ARGS --values="$(values producer)"
+    else
+        helm upgrade --install producers $BLOCK_PRODUCER_CHART $HELM_ARGS --values="$(values producer)"
+    fi
 fi
 
 if [ -n "$SNARK_WORKERS" ]; then
-    helm upgrade --install snark-workers $SNARK_WORKER_CHART $HELM_ARGS  --values="$(values snark-worker)" --set-file=publicKey=resources/key-99.pub
+    if [ -n "$LINT" ]; then
+        helm lint $SNARK_WORKER_CHART $HELM_ARGS  --values="$(values snark-worker)" --set-file=publicKey=resources/key-99.pub
+    else
+        helm upgrade --install snark-workers $SNARK_WORKER_CHART $HELM_ARGS  --values="$(values snark-worker)" --set-file=publicKey=resources/key-99.pub
+    fi
 fi
 
 if [ -n "$NODES" ]; then
-    helm upgrade --install nodes $PLAIN_NODE_CHART $HELM_ARGS --values="$(values node)"
+    if [ -n "$LINT" ]; then
+        helm lint $PLAIN_NODE_CHART $HELM_ARGS --values="$(values node)"
+    else
+        helm upgrade --install nodes $PLAIN_NODE_CHART $HELM_ARGS --values="$(values node)"
+    fi
 fi
 
 if [ -n "$FRONTEND" ]; then
-    "$(dirname "$0")/update-frontend.sh" --namespace=$NAMESPACE --node-port=$NODE_PORT
+    if [ -n "$LINT" ]; then
+        echo "WARN: Linting for frontend is not implemented"
+    else
+        "$(dirname "$0")/update-frontend.sh" --namespace=$NAMESPACE --node-port=$NODE_PORT
+    fi
 fi
