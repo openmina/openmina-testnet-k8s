@@ -70,5 +70,5 @@ for KEY in "$@"; do
         echo "WARN: no public key for $KEY"
         continue
     fi
-    kubectl create secret generic "$NAME" --from-file=key="$KEY" --from-file=pub="$PUB"
+    kubectl create --namespace="$NAMESPACE" secret generic "$NAME" --from-file=key="$KEY" --from-file=pub="$PUB"
 done
