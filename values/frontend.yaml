@@ -1,2 +1,2 @@
 frontend:
-  image: directcuteo/mina-frontend:snarkTrace9
+  image: directcuteo/mina-frontend:snarkTrace10

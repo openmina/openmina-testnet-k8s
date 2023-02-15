@@ -88,7 +88,7 @@ while true; do
             continue
         ;;
         '-o'|'--optimized')
-            HELM_ARGS="$HELM_ARGS --set=mina.optimized=true"
+            #HELM_ARGS="$HELM_ARGS --set=mina.optimized=true"
             OPTIMIZED=1
             shift
             continue
