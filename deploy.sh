@@ -128,11 +128,25 @@ if [ "$NAMESPACE" = testnet ]; then
     echo "'testnet' namespace shouldn't be used"
     exit 1
 elif [ -z "$NAMESPACE" ]; then
+    if [ -z "$LINT" ] && [ -z "$FORCE" ]; then
+        echo "You are supposed to deploy to one of the commonly used testnets. Continue? [y/N]"
+        read -r CONFIRM
+        if ! [ "$CONFIRM" = y || "$CONFIRM" = Y ]; then
+            echo "Aborting deployment"
+            exit 1
+        fi
+    fi
     if [ -z "$OPTIMIZED" ]; then
         NAMESPACE=testnet-unoptimized
     else
         NAMESPACE=testnet-optimized
     fi
+fi
+
+KUBECTL_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+
+if [ -z "$LINT" ] && [ "$KUBECTL_NAMESPACE" != "$NAMESPACE" ]; then
+    echo "WARN: Current kubectl namespace '$KUBECTL_NAMESPACE' differs from '$NAMESPACE'"
 fi
 
 if [ -n "$DELETE" ]; then
@@ -200,4 +214,8 @@ if [ -n "$FRONTEND" ]; then
     else
         "$(dirname "$0")/update-frontend.sh" --namespace=$NAMESPACE --node-port=$NODE_PORT
     fi
+fi
+
+if [ -z "$LINT" ] && [ "$KUBECTL_NAMESPACE" != "$NAMESPACE" ]; then
+    echo "WARN: Current kubectl namespace '$KUBECTL_NAMESPACE' differs from '$NAMESPACE'"
 fi
