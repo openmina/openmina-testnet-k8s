@@ -9,7 +9,7 @@ BLOCK_PRODUCER_CHART=mina/helm/block-producer
 SNARK_WORKER_CHART=mina/helm/snark-worker
 PLAIN_NODE_CHART=mina/helm/plain-node
 
-TEMP=$(getopt -o 'hDafspwdoPnl:' --long 'help,delete,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,dry-run,lint' -n "$0" -- "$@")
+TEMP=$(getopt -o 'hDafspwdoPnl:' --long 'help,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,force' -n "$0" -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
@@ -23,7 +23,11 @@ usage() {
     cat <<EOF
 Deploys/updates Openmina testnet.
 
-Usage: $0 [OPTIONS]
+Usage:
+$0 [OPTIONS]
+$0 delete [OPTIONS]
+$0 lint [OPTIONS]
+$0 dry-run [OPTIONS]
 
 Options:
    -h, --help       Display this message
@@ -39,6 +43,8 @@ Options:
    -P, --node-port=PORT
                     Use PORT as a node port to access the deployed frontend
    -D, --delete     Deletes all node-related Helm releases
+       --dry-run    Do not deploy, just print commands
+   -f, --force      Do not ask confirmations
 EOF
 }
 
@@ -104,12 +110,17 @@ while true; do
             continue
         ;;
         '--dry-run')
-            HELM_ARGS="$HELM_ARGS --dry-run --debug"
+            DRY_RUN=1
             shift
             continue
         ;;
         '--lint')
             LINT=1
+            shift
+            continue
+        ;;
+        '--force')
+            FORCE=1
             shift
             continue
         ;;
@@ -124,6 +135,25 @@ while true; do
     esac
 done
 
+if [ $# -gt 1 ]; then
+    usage
+    exit 1
+fi
+
+case $1 in
+    '')
+        OP=deploy
+    ;;
+    'delete'|'lint'|'dry-run')
+        OP="$1"
+        shift
+    ;;
+    *)
+        echo "Unknown command $1"
+        exit 1
+    ;;
+esac
+
 if [ "$NAMESPACE" = testnet ]; then
     echo "'testnet' namespace shouldn't be used"
     exit 1
@@ -131,7 +161,7 @@ elif [ -z "$NAMESPACE" ]; then
     if [ -z "$LINT" ] && [ -z "$FORCE" ]; then
         echo "You are supposed to deploy to one of the commonly used testnets. Continue? [y/N]"
         read -r CONFIRM
-        if ! [ "$CONFIRM" = y || "$CONFIRM" = Y ]; then
+        if ! [ "$CONFIRM" = y ] && ! [ "$CONFIRM" = Y ]; then
             echo "Aborting deployment"
             exit 1
         fi
@@ -145,11 +175,11 @@ fi
 
 KUBECTL_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
 
-if [ -z "$LINT" ] && [ "$KUBECTL_NAMESPACE" != "$NAMESPACE" ]; then
+if [ "$OP" != lint ] && [ "$KUBECTL_NAMESPACE" != "$NAMESPACE" ]; then
     echo "WARN: Current kubectl namespace '$KUBECTL_NAMESPACE' differs from '$NAMESPACE'"
 fi
 
-if [ -n "$DELETE" ]; then
+if [ "$OP" = delete ]; then
     if [ -n "$SEEDS" ] || [ -n "$PRODUCERS" ] || [ -n "$SNARK_WORKERS" ] || [ -n "$NODES" ] || [ -n "$FRONTEND" ]; then
         echo "--delete shouldn't be used with --seed, etc";
         exit 1
@@ -177,45 +207,59 @@ HELM_ARGS="--namespace=$NAMESPACE \
            $HELM_ARGS"
 
 if [ -n "$SEEDS" ]; then
-    if [ -n "$LINT" ]; then
-        helm lint $SEED_NODE_CHART $HELM_ARGS --values="$(values seed)"
+    ARGS="$SEED_NODE_CHART $HELM_ARGS --values=$(values seed)"
+    if [ "$OP" = lint ]; then
+        helm lint $ARGS
+    elif [ "$OP" = dry-run ]; then
+        echo helm upgrade --install $ARGS
     else
-        helm upgrade --install seeds $SEED_NODE_CHART $HELM_ARGS --values="$(values seed)"
+        helm upgrade --install $ARGS
     fi
 fi
 
 if [ -n "$PRODUCERS" ]; then
-    if [ -n "$LINT" ]; then
-        helm lint $BLOCK_PRODUCER_CHART $HELM_ARGS --values="$(values producer)"
+    ARGS="$BLOCK_PRODUCER_CHART $HELM_ARGS --values=$(values producer)"
+    if [ "$OP" = lint ]; then
+        helm lint $ARGS
+    elif [ "$OP" = dry-run ]; then
+        echo helm upgrade --install producers $ARGS
     else
-        helm upgrade --install producers $BLOCK_PRODUCER_CHART $HELM_ARGS --values="$(values producer)"
+        helm upgrade --install producers $ARGS
     fi
 fi
 
 if [ -n "$SNARK_WORKERS" ]; then
-    if [ -n "$LINT" ]; then
-        helm lint $SNARK_WORKER_CHART $HELM_ARGS  --values="$(values snark-worker)" --set-file=publicKey=resources/key-99.pub
+    ARGS="$SNARK_WORKER_CHART $HELM_ARGS  --values=$(values snark-worker) --set-file=publicKey=resources/key-99.pub"
+    if [ "$OP" = lint ]; then
+        helm lint $ARGS
+    elif [ "$OP" = dry-run ]; then
+        echo helm upgrade --install snark-workers $ARGS
     else
-        helm upgrade --install snark-workers $SNARK_WORKER_CHART $HELM_ARGS  --values="$(values snark-worker)" --set-file=publicKey=resources/key-99.pub
+        helm upgrade --install snark-workers $ARGS
     fi
 fi
 
 if [ -n "$NODES" ]; then
-    if [ -n "$LINT" ]; then
-        helm lint $PLAIN_NODE_CHART $HELM_ARGS --values="$(values node)"
+    ARGS="$PLAIN_NODE_CHART $HELM_ARGS --values=$(values node)"
+    if [ "$OP" = lint ]; then
+        helm lint $ARGS
+    elif [ "$OP" = dry-run ]; then
+        echo helm upgrade --install nodes $ARGS
     else
-        helm upgrade --install nodes $PLAIN_NODE_CHART $HELM_ARGS --values="$(values node)"
+        helm upgrade --install nodes $ARGS
     fi
 fi
 
 if [ -n "$FRONTEND" ]; then
-    if [ -n "$LINT" ]; then
+    if [ "$OP" = lint ]; then
         echo "WARN: Linting for frontend is not implemented"
+    elif [ "$OP" = dry-run ]; then
+        echo "$(dirname "$0")/update-frontend.sh" --namespace=$NAMESPACE --node-port=$NODE_PORT
     else
         "$(dirname "$0")/update-frontend.sh" --namespace=$NAMESPACE --node-port=$NODE_PORT
     fi
 fi
 
-if [ -z "$LINT" ] && [ "$KUBECTL_NAMESPACE" != "$NAMESPACE" ]; then
+if [ "$OP" != lint ] && [ "$KUBECTL_NAMESPACE" != "$NAMESPACE" ]; then
     echo "WARN: Current kubectl namespace '$KUBECTL_NAMESPACE' differs from '$NAMESPACE'"
 fi
