@@ -24,10 +24,10 @@ usage() {
 Deploys/updates Openmina testnet.
 
 Usage:
-$0 [OPTIONS]
-$0 delete [OPTIONS]
-$0 lint [OPTIONS]
-$0 dry-run [OPTIONS]
+$0 deploy <NAMESPACE> [OPTIONS]
+$0 delete <NAMESPACE> [OPTIONS]
+$0 lint <NAMESPACE> [OPTIONS]
+$0 dry-run <NAMESPACE> [OPTIONS]
 
 Options:
    -h, --help       Display this message
@@ -38,8 +38,6 @@ Options:
    -w, --snark-workers
                     Install snark workers (and HTTP coordinator)
    -d, --nodes      Install plain nodes
-   -n, --namespace=NAMESPACE
-                    Use namespace NAMESPACE
    -P, --node-port=PORT
                     Use PORT as a node port to access the deployed frontend
    -D, --delete     Deletes all node-related Helm releases
@@ -99,24 +97,9 @@ while true; do
             shift
             continue
         ;;
-        '-n'|'--namespace')
-            NAMESPACE=$2
-            shift 2
-            continue
-        ;;
         '-P'|'--port'|'--node-port')
             NODE_PORT=$2
             shift 2
-            continue
-        ;;
-        '--dry-run')
-            DRY_RUN=1
-            shift
-            continue
-        ;;
-        '--lint')
-            LINT=1
-            shift
             continue
         ;;
         '--force')
@@ -135,24 +118,44 @@ while true; do
     esac
 done
 
-if [ $# -gt 1 ]; then
+if [ $# != 2 ]; then
     usage
     exit 1
 fi
 
 case $1 in
-    '')
-        OP=deploy
-    ;;
-    'delete'|'lint'|'dry-run')
+    'deploy'|'delete'|'lint'|'dry-run')
         OP="$1"
-        shift
     ;;
     *)
         echo "Unknown command $1"
         exit 1
     ;;
 esac
+NAMESPACE="$2"
+
+
+operate() {
+    NAME=$1
+    shift
+    case $OP in
+        deploy)
+            helm upgrade --install "$NAME" "$@"
+        ;;
+        dry-run)
+            echo helm upgrade --install "$NAME" "$@"
+        ;;
+        lint)
+            helm lint "$@"
+        ;;
+        delete)
+            helm delete "$NAME"
+        ;;
+        *)
+            echo "Internal error: $OP"
+        ;;
+    esac
+}
 
 if [ "$NAMESPACE" = testnet ]; then
     echo "'testnet' namespace shouldn't be used"
@@ -207,47 +210,19 @@ HELM_ARGS="--namespace=$NAMESPACE \
            $HELM_ARGS"
 
 if [ -n "$SEEDS" ]; then
-    ARGS="$SEED_NODE_CHART $HELM_ARGS --values=$(values seed)"
-    if [ "$OP" = lint ]; then
-        helm lint $ARGS
-    elif [ "$OP" = dry-run ]; then
-        echo helm upgrade --install $ARGS
-    else
-        helm upgrade --install $ARGS
-    fi
+    operate seeds $SEED_NODE_CHART $HELM_ARGS --values="$(values seed)"
 fi
 
 if [ -n "$PRODUCERS" ]; then
-    ARGS="$BLOCK_PRODUCER_CHART $HELM_ARGS --values=$(values producer)"
-    if [ "$OP" = lint ]; then
-        helm lint $ARGS
-    elif [ "$OP" = dry-run ]; then
-        echo helm upgrade --install producers $ARGS
-    else
-        helm upgrade --install producers $ARGS
-    fi
+    operate producers $BLOCK_PRODUCER_CHART $HELM_ARGS --values="$(values producer)"
 fi
 
 if [ -n "$SNARK_WORKERS" ]; then
-    ARGS="$SNARK_WORKER_CHART $HELM_ARGS  --values=$(values snark-worker) --set-file=publicKey=resources/key-99.pub"
-    if [ "$OP" = lint ]; then
-        helm lint $ARGS
-    elif [ "$OP" = dry-run ]; then
-        echo helm upgrade --install snark-workers $ARGS
-    else
-        helm upgrade --install snark-workers $ARGS
-    fi
+    operate snark-workers $SNARK_WORKER_CHART $HELM_ARGS  --values="$(values snark-worker)" --set-file=publicKey=resources/key-99.pub
 fi
 
 if [ -n "$NODES" ]; then
-    ARGS="$PLAIN_NODE_CHART $HELM_ARGS --values=$(values node)"
-    if [ "$OP" = lint ]; then
-        helm lint $ARGS
-    elif [ "$OP" = dry-run ]; then
-        echo helm upgrade --install nodes $ARGS
-    else
-        helm upgrade --install nodes $ARGS
-    fi
+    operate nodes $PLAIN_NODE_CHART $HELM_ARGS --values="$(values node)"
 fi
 
 if [ -n "$FRONTEND" ]; then
@@ -255,6 +230,9 @@ if [ -n "$FRONTEND" ]; then
         echo "WARN: Linting for frontend is not implemented"
     elif [ "$OP" = dry-run ]; then
         echo "$(dirname "$0")/update-frontend.sh" --namespace=$NAMESPACE --node-port=$NODE_PORT
+    elif [ -z "$NODE_PORT" ]; then
+        echo "node port is unknown"
+        exit 1
     else
         "$(dirname "$0")/update-frontend.sh" --namespace=$NAMESPACE --node-port=$NODE_PORT
     fi
