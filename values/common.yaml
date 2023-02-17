@@ -73,7 +73,7 @@ bpfDebugger:
 
 logs:
   enable: true
-  image: akoptelov/mina-logs-service:c22c8d6
+  image: openmina/mina-logs-service:b5d32468
 
 nodeSelector:
   preemptible: false
