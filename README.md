@@ -35,13 +35,13 @@ options are specified.
 
 This will install a full testnet using `testnet-unoptimized` namespace:
 ``` sh
-$ ./deploy --all
+$ ./deploy deploy --all
 ```
 
 To install/update optimized testnet, use the following:
 
 ``` sh
-$ ./deploy --all --optimized
+$ ./deploy deploy --all --optimized
 ```
 
 
@@ -50,7 +50,7 @@ the `--namespace` option. For the frontend application, you also need to specify
 `--node-port` option:
 
 ``` sh
-$ ./deploy --all --namespace=my-testnet --node-port=31399
+$ ./deploy deploy --all --namespace=my-testnet --node-port=31399
 ```
 
 Note that the node port should be free (or used by the frontend deployed the
@@ -66,7 +66,7 @@ Before deploying an updated Helm chart, it is good to have it linted. This can
 be done using this command:
 
 ``` sh
-$ ./deploy.sh --lint --all
+$ ./deploy.sh lint --all
 ```
 
 ## Namespace configuration
