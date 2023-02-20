@@ -9,7 +9,7 @@ BLOCK_PRODUCER_CHART=mina/helm/block-producer
 SNARK_WORKER_CHART=mina/helm/snark-worker
 PLAIN_NODE_CHART=mina/helm/plain-node
 
-TEMP=$(getopt -o 'hDafspwdoPnl:' --long 'help,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,force' -n "$0" -- "$@")
+TEMP=$(getopt -o 'hDafspwdoPnli:' --long 'help,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,force,image:,mina-image:' -n "$0" -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
@@ -24,14 +24,16 @@ usage() {
 Deploys/updates Openmina testnet.
 
 Usage:
-$0 deploy <NAMESPACE> [OPTIONS]
-$0 delete <NAMESPACE> [OPTIONS]
-$0 lint <NAMESPACE> [OPTIONS]
-$0 dry-run <NAMESPACE> [OPTIONS]
+$0 deploy [OPTIONS]
+$0 delete [OPTIONS]
+$0 lint [OPTIONS]
+$0 dry-run [OPTIONS]
 
 Options:
    -h, --help       Display this message
    -o, --optimized  Enable optimizations for Mina daemon
+   -i, --mina-image, --image
+                    Use specific image for Mina instead of what specified in values/common.yaml
    -a, --all        Install all nodes and the frontend
    -s, --seeds      Install seed nodes
    -p, --producers  Install block producing nodes
@@ -52,9 +54,19 @@ while true; do
             usage
             exit 0
         ;;
+        '-n'|'--namespace')
+            NAMESPACE=$2
+            shift 2;
+            continue
+        ;;
         '-D'|'--delete')
             DELETE=1
             shift
+            continue
+        ;;
+        '-i'|'--image'|'--mina-image')
+            MINA_IMAGE=$2
+            shift 2
             continue
         ;;
         '-a'|'--all')
@@ -118,7 +130,7 @@ while true; do
     esac
 done
 
-if [ $# != 2 ]; then
+if [ $# != 1 ]; then
     usage
     exit 1
 fi
@@ -132,8 +144,6 @@ case $1 in
         exit 1
     ;;
 esac
-NAMESPACE="$2"
-
 
 operate() {
     NAME=$1
@@ -207,6 +217,7 @@ HELM_ARGS="--namespace=$NAMESPACE \
            --values=$(values common) \
            --set=frontend.nodePort=$NODE_PORT \
            --set-file=mina.runtimeConfig=resources/daemon.json \
+           ${MINA_IMAGE:+--set=mina.image=${MINA_IMAGE}} \
            $HELM_ARGS"
 
 if [ -n "$SEEDS" ]; then
