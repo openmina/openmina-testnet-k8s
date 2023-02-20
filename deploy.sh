@@ -9,7 +9,7 @@ BLOCK_PRODUCER_CHART=mina/helm/block-producer
 SNARK_WORKER_CHART=mina/helm/snark-worker
 PLAIN_NODE_CHART=mina/helm/plain-node
 
-TEMP=$(getopt -o 'hDafspwdoPnli:' --long 'help,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,force,image:,mina-image:' -n "$0" -- "$@")
+TEMP=$(getopt -o 'hDafspwdoPn:li:' --long 'help,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,force,image:,mina-image:' -n "$0" -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
@@ -31,6 +31,8 @@ $0 dry-run [OPTIONS]
 
 Options:
    -h, --help       Display this message
+   -n, --namespace NAMESPACE
+                    Use k8s namespace NAMESPACE
    -o, --optimized  Enable optimizations for Mina daemon
    -i, --mina-image, --image
                     Use specific image for Mina instead of what specified in values/common.yaml
