@@ -168,9 +168,9 @@ operate() {
         ;;
         delete)
             if [ -z "$DRY_RUN" ]; then
-                helm delete "$NAME" || true
+                helm delete "$NAME" "$@"|| true
             else
-                echo helm delete "$NAME"
+                echo helm delete "$NAME" "$@"
             fi
         ;;
         *)
@@ -245,7 +245,7 @@ if [ -n "$FRONTEND" ]; then
     elif [ "$OP" = dry-run ]; then
         echo "$(dirname "$0")/update-frontend.sh" --namespace=$NAMESPACE --node-port=$NODE_PORT
     elif [ "$OP" = delete ]; then
-        operate frontend
+        operate frontend --namespace=$NAMESPACE
     else
         "$(dirname "$0")/update-frontend.sh" --namespace=$NAMESPACE --node-port=$NODE_PORT
     fi
