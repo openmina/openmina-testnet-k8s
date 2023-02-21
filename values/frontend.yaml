@@ -1,2 +1,2 @@
 frontend:
-  image: directcuteo/mina-frontend:downloadLogs
+  image: directcuteo/mina-frontend:downloadLogs3
