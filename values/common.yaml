@@ -65,15 +65,15 @@ resources:
 
 bpfDebugger:
   enable: true
-  image: openminabot/mina-network-debugger:4566c6a4
-  chainId: 03ec116a7ecb21df2696bb34dbd9ae43d6f35f43ef28ca02f1467a47d6feeb04
+  image: openmina/mina-network-debugger:a7aa14d5
+  chainId: 00fb801930ddb17bd4c1af63519ec7baeaea2d4667ed8f42f877c6a0c3412bd5
   cpu: "2000m"
   memory: "4Gi"
   restartMinaOnExit: true
 
 logs:
   enable: true
-  image: akoptelov/mina-logs-service:c22c8d6
+  image: openmina/mina-logs-service:b5d32468
 
 nodeSelector:
   preemptible: false
