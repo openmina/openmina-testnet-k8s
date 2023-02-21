@@ -9,7 +9,7 @@ BLOCK_PRODUCER_CHART=mina/helm/block-producer
 SNARK_WORKER_CHART=mina/helm/snark-worker
 PLAIN_NODE_CHART=mina/helm/plain-node
 
-TEMP=$(getopt -o 'hDafspwdoPn:li:' --long 'help,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,force,image:,mina-image:,dry-run' -n "$0" -- "$@")
+TEMP=$(getopt -o 'hDafspwdoP:n:li:' --long 'help,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,force,image:,mina-image:,dry-run' -n "$0" -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
