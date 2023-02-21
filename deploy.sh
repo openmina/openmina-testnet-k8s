@@ -152,33 +152,6 @@ case $1 in
     ;;
 esac
 
-operate() {
-    NAME=$1
-    shift
-    case $OP in
-        deploy)
-            if [ -z "$DRY_RUN" ]; then
-               helm upgrade --install "$NAME" "$@"
-            else
-               echo helm upgrade --install "$NAME" "$@"
-            fi
-        ;;
-        lint)
-            helm lint "$@"
-        ;;
-        delete)
-            if [ -z "$DRY_RUN" ]; then
-                helm delete "$NAME" "$@"|| true
-            else
-                echo helm delete "$NAME" "$@"
-            fi
-        ;;
-        *)
-            echo "Internal error: $OP"
-        ;;
-    esac
-}
-
 if [ "$OP" = deploy ] && [ -n "$FRONTEND" ] && [ -z "$NODE_PORT" ]; then
     echo "Specify node port to deploy frontend"
     exit 1
@@ -216,12 +189,41 @@ values() {
     echo "$(dirname "$0")/values/$1.yaml"
 }
 
-HELM_ARGS="--namespace=$NAMESPACE \
-           --values=$(values common) \
+HELM="helm --namespace=$NAMESPACE"
+HELM_ARGS="--values=$(values common) \
            --set=frontend.nodePort=$NODE_PORT \
            --set-file=mina.runtimeConfig=resources/daemon.json \
            ${MINA_IMAGE:+--set=mina.image=${MINA_IMAGE}} \
            $HELM_ARGS"
+
+operate() {
+    NAME=$1
+    shift
+    case $OP in
+        deploy)
+            if [ -z "$DRY_RUN" ]; then
+               $HELM upgrade --install "$NAME" "$@"
+            else
+               echo $HELM upgrade --install "$NAME" "$@"
+            fi
+        ;;
+        lint)
+            $HELM lint "$@"
+        ;;
+        delete)
+            if [ -z "$DRY_RUN" ]; then
+                $HELM delete "$NAME" || true
+            else
+                echo $HELM delete "$NAME"
+            fi
+        ;;
+        *)
+            echo "Internal error: $OP"
+        ;;
+    esac
+}
+
+
 
 if [ -n "$SEEDS" ]; then
     operate seeds $SEED_NODE_CHART $HELM_ARGS --values="$(values seed)"
