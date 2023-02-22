@@ -15,9 +15,9 @@ Currently the following testnets are used:
 - **Public testnet** uses the `testnet` namespace and shouldn't be
   modified/stopped unless approved by Juraj. It is accessible via port `31308`
   (e.g. http://1.k8.openmina.com:31308).
-- **Optimized testnet** uses the `optimized-testnet` namespace and runs Mina
-  node with our optimizating modifications turned on. It is accessible via port
-  `31310` (e.g. http://1.k8.openmina.com:31310).
+- **Bitswap testnet** uses the `bit-catchup-testnet` namespace and runs Mina
+  node with new bitswap implementation. It is accessible via port `31310` (e.g.
+  http://1.k8.openmina.com:31310).
 - **Unoptimized testnet** uses the `unoptimized-testnet` namespace and runs Mina
   node with our optimizating modifications turned off. It is accessible via port
   `31311` (e.g. http://1.k8.openmina.com:31311).
@@ -73,6 +73,30 @@ $ ./deploy.sh lint --all
 
 Before the testnet can be installed into an empty namespace, it should be
 configured by creating some resources that are used by it.
+
+There is a script [create-namespace.sh] that can be used to configure a new
+namespace with common data. It will also ask you for a one-line description for
+this namespace.
+
+``` sh
+$ ./create-namespace.sh <NAMESPACE> <NODE-PORT>
+```
+
+E.g. 
+
+``` sh
+$ ./create-namespace.sh testnet-my-testnet 31398
+Please enter description for the new namespace, followed by ENTER:
+Testnet for testing namespace creation
+
+configmap/scripts created
+secret/seed1-libp2p-secret created
+secret/prod1-privkey-secret created
+secret/prod2-privkey-secret created
+secret/prod3-privkey-secret created
+```
+
+`
 
 ### Secrets
 

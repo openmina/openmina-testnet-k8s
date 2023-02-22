@@ -9,7 +9,7 @@ BLOCK_PRODUCER_CHART=mina/helm/block-producer
 SNARK_WORKER_CHART=mina/helm/snark-worker
 PLAIN_NODE_CHART=mina/helm/plain-node
 
-TEMP=$(getopt -o 'hDafspwdoP:n:li:' --long 'help,all,frontend,seeds,producers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,force,image:,mina-image:,dry-run' -n "$0" -- "$@")
+TEMP=$(getopt -o 'hafspwdoP:n:li:' --long 'help,all,frontend,seeds,producers,snarkers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,force,image:,mina-image:,dry-run' -n "$0" -- "$@")
 
 if [ $? -ne 0 ]; then
 	echo 'Terminating...' >&2
@@ -61,11 +61,6 @@ while true; do
             shift 2;
             continue
         ;;
-        '-D'|'--delete')
-            DELETE=1
-            shift
-            continue
-        ;;
         '-i'|'--image'|'--mina-image')
             MINA_IMAGE=$2
             shift 2
@@ -95,7 +90,7 @@ while true; do
             shift
             continue
         ;;
-        '-w'|'--snark-workers')
+        '-w'|'--snarkers'|'--snark-workers')
             SNARK_WORKERS=1
             shift
             continue
@@ -151,11 +146,6 @@ case $1 in
         exit 1
     ;;
 esac
-
-if [ "$OP" = deploy ] && [ -n "$FRONTEND" ] && [ -z "$NODE_PORT" ]; then
-    echo "Specify node port to deploy frontend"
-    exit 1
-fi
 
 KUBECTL_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
 if [ -z "$NAMESPACE" ]; then

@@ -112,11 +112,16 @@ values() {
 }
 
 if [ -z "$NODE_PORT" ]; then
+    NODE_PORT=$($KUBECTL get namespace/"$NAMESPACE" --output=jsonpath="{.metadata.annotations['openmina\.com/testnet\.nodePort']}")
+fi
+
+if [ -z "$NODE_PORT" ]; then
     NODE_PORT=$($KUBECTL get service/frontend-service --output="jsonpath={.spec.ports[0].nodePort}")
-    if [ -z "$NODE_PORT" ]; then
-        echo "Cannot determine frontend node port. Use '--node-port'."
-        exit 1
-    fi
+fi
+
+if [ -z "$NODE_PORT" ]; then
+    echo "Cannot determine frontend node port. Use '--node-port'."
+    exit 1
 fi
 
 # if [ -z "$IMAGE" ]; then
