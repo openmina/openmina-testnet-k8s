@@ -69,7 +69,7 @@ bpfDebugger:
   image: openmina/mina-network-debugger:28eab4dd
   cpu: "2000m"
   memory: "4Gi"
-  restartMinaOnExit: true
+  restartMina: true
 
 logs:
   enable: true
