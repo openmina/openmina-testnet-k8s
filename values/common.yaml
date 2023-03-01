@@ -1,6 +1,6 @@
 testnetName: testnet
 mina:
-  image: tizoc/mina-daemon:tracing-optional-optimizations-launcher-focal-berkeley-7
+  image: tizoc/mina-daemon:tracing-optional-optimizations-focal-berkeley-current-capture_proof_generation_inputs-1
   snarkCoordinatorImage: binier/mina-snark-worker-rs:latest
   privkeyPass:
   exposeGraphql: true
@@ -67,7 +67,7 @@ resources:
 bpfDebugger:
   enable: true
   image: openmina/mina-network-debugger:a7aa14d5
-  chainId: 26f04bd7816884e7adb63fe2083c1e387a68c5be86cd6601ffec30320254dcf3
+  chainId: 0c1e97b58c608d0156bbf5378231e9335c7a003cce142de9b8566985aaacd4f5
   cpu: "2000m"
   memory: "4Gi"
   restartMinaOnExit: true
