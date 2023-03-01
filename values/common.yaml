@@ -66,8 +66,7 @@ resources:
 
 bpfDebugger:
   enable: true
-  image: openmina/mina-network-debugger:a7aa14d5
-  chainId: 0c1e97b58c608d0156bbf5378231e9335c7a003cce142de9b8566985aaacd4f5
+  image: openmina/mina-network-debugger:28eab4dd
   cpu: "2000m"
   memory: "4Gi"
   restartMinaOnExit: true
