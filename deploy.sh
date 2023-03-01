@@ -42,11 +42,13 @@ Options:
    -w, --snark-workers
                     Install snark workers (and HTTP coordinator)
    -d, --nodes      Install plain nodes
+   -f, --front-end  Install frontend
    -P, --node-port=PORT
                     Use PORT as a node port to access the deployed frontend
+                    (if omitted, taken from the namespace annotations)
    -D, --delete     Deletes all node-related Helm releases
        --dry-run    Do not deploy, just print commands
-   -f, --force      Do not ask confirmations
+       --force      Do not ask confirmations
 EOF
 }
 
@@ -149,16 +151,16 @@ esac
 
 KUBECTL_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
 if [ -z "$NAMESPACE" ]; then
-    echo "Using default namespace $KUBECTL_NAMESPACE"
+    echo "Using current namespace ${KUBECTL_NAMESPACE:-default}"
     if [ -z "$LINT" ] && [ -z "$DRY_RUN" ] && [ -z "$FORCE" ]; then
-        echo "You are using default namespace $KUBECTL_NAMESPACE. Continue? [y/N]"
+        echo "You are using current namespace ${KUBECTL_NAMESPACE:-default}. Continue? [y/N]"
         read -r CONFIRM
         if ! [ "$CONFIRM" = y ] && ! [ "$CONFIRM" = Y ]; then
             echo "Aborting deployment"
             exit 1
         fi
     fi
-    NAMESPACE=$KUBECTL_NAMESPACE
+    NAMESPACE=${KUBECTL_NAMESPACE:-default}
 fi
 
 if [ "$NAMESPACE" = testnet ] && [ -z "$DRY_RUN" ]; then
