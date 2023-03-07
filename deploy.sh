@@ -4,10 +4,13 @@ set -e
 
 HELM_ARGS=""
 
-SEED_NODE_CHART=mina/helm/seed-node
-BLOCK_PRODUCER_CHART=mina/helm/block-producer
-SNARK_WORKER_CHART=mina/helm/snark-worker
-PLAIN_NODE_CHART=mina/helm/plain-node
+if [ -z "$CHARTS" ]; then
+    CHARTS="$(dirname "$0")/mina/helm"
+fi
+SEED_NODE_CHART="$CHARTS/seed-node"
+BLOCK_PRODUCER_CHART="$CHARTS/block-producer"
+SNARK_WORKER_CHART="$CHARTS/snark-worker"
+PLAIN_NODE_CHART="$CHARTS/plain-node"
 
 TEMP=$(getopt -o 'hafspwdoP:n:li:' --long 'help,all,frontend,seeds,producers,snarkers,snark-workers,nodes,plain-nodes,optimized,port:,node-port:,namespace:,force,image:,mina-image:,dry-run' -n "$0" -- "$@")
 
