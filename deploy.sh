@@ -180,6 +180,10 @@ if [ "$NAMESPACE" = testnet ] && [ -z "$DRY_RUN" ]; then
     fi
 fi
 
+resource() {
+    echo "$(dirname "$0")/resources/$1"
+}
+
 values() {
     echo "$(dirname "$0")/values/$1.yaml"
 }
@@ -187,7 +191,7 @@ values() {
 HELM="helm --namespace=$NAMESPACE"
 HELM_ARGS="--values=$(values common) \
            --set=frontend.nodePort=$NODE_PORT \
-           --set-file=mina.runtimeConfig=resources/daemon.json \
+           --set-file=mina.runtimeConfig=$(resource daemon.json) \
            ${MINA_IMAGE:+--set=mina.image=${MINA_IMAGE}} \
            $HELM_ARGS"
 
@@ -229,7 +233,7 @@ if [ -n "$PRODUCERS" ]; then
 fi
 
 if [ -n "$SNARK_WORKERS" ]; then
-    operate snark-workers $SNARK_WORKER_CHART $HELM_ARGS  --values="$(values snark-worker)" --set-file=publicKey=resources/key-99.pub
+    operate snark-workers $SNARK_WORKER_CHART $HELM_ARGS  --values="$(values snark-worker)" --set-file=publicKey="$(resource key-99.pub)"
 fi
 
 if [ -n "$NODES" ]; then
