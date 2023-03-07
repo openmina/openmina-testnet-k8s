@@ -2,7 +2,10 @@
 
 set -e
 
-FRONTEND_CHART=mina/helm/openmina-frontend
+if [ -z "$CHARTS" ]; then
+    CHARTS="$(dirname "$0")/mina/helm"
+fi
+FRONTEND_CHART="$CHARTS/openmina-frontend"
 
 usage() {
     cat <<EOF
